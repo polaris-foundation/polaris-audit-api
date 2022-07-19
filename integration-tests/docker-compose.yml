@@ -1,0 +1,91 @@
+x-environment:
+  &COMMON_ENVIRONMENT
+  ENVIRONMENT: DEVELOPMENT
+  PROXY_URL: http://localhost
+  HS_ISSUER: http://localhost/
+  HS_KEY: secret
+  REDIS_HOST: localhost
+  REDIS_PORT: 6379
+  REDIS_PASSWORD: any
+  LOG_LEVEL: DEBUG
+  LOG_FORMAT: COLOUR
+  AUTH0_MGMT_CLIENT_ID: "doesnotmatter"
+  AUTH0_MGMT_CLIENT_SECRET: "shhh"
+  AUTH0_AUTHZ_CLIENT_ID: "doesnotmatter"
+  AUTH0_AUTHZ_CLIENT_SECRET: "shhh"
+  AUTH0_AUTHZ_WEBTASK_URL: "doesnotmatter"
+  AUTH0_CLIENT_ID: "doesnotmatter"
+  AUTH0_AUDIENCE: "http://localhost/"
+  NONCUSTOM_AUTH0_DOMAIN: "https://integration-tests"
+  AUTH0_CUSTOM_DOMAIN: "dev"
+  DISABLE_CREATE_USER_IN_AUTH0: "True"
+  AUTH0_HS_KEY: "secret"
+  ALLOW_DROP_DATA: "True"
+  
+services:
+  dhos-audit-integration-tests:
+    container_name: "dhos-audit-integration-tests"
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      BEHAVE_ARGS: ${BEHAVE_ARGS:-}
+      REPORT_PORTAL_URL: ${REPORT_PORTAL_URL:-}
+      REPORT_PORTAL_TOKEN: ${REPORT_PORTAL_TOKEN:-}
+      REPORT_PORTAL_PROJECT: ${REPORT_PORTAL_PROJECT:-}
+      ENVIRONMENT: ${ENVIRONMENT:-}
+      RELEASE: ${RELEASE:-}
+      SYSTEM_JWT_SCOPE: >-
+        read:audit_event write:audit_event
+    command: >
+      bash -c "behave --no-capture --no-logcapture ${BEHAVE_ARGS:-}"
+    depends_on:
+      "dhos-audit-api":
+        condition: service_healthy
+
+  dhos-audit-api:
+    container_name: "dhos-audit-api"
+    build:
+      context: ..
+      args:
+        - GEMFURY_DOWNLOAD_KEY
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      DHOS_AUDIT_BASE_URL: http://dhos-audit-api:5000
+      EXTERNAL_URL: http://dhos-audit-api:5000
+      DATABASE_HOST: dhos-audit-api-db
+      DATABASE_PORT: 5432
+      DATABASE_USER: dhos-audit-api
+      DATABASE_PASSWORD: dhos-audit-api
+      DATABASE_NAME: dhos-audit-api
+    user: root
+    command: >
+      bash -c "apt-get update && apt-get install openssh-server -y
+      && (echo 'app:app' | chpasswd)
+      && service ssh start
+      && env > /app/local.env
+      && su app -- -c 'flask db upgrade'
+      && su app -- -c 'python -m dhos_audit_api'"
+    healthcheck:
+      test: curl -f http://localhost:5000/running || false
+      interval: 3s
+      retries: 40
+      start_period: 5s
+    depends_on:
+      "dhos-audit-api-db":
+        condition: service_healthy
+
+  dhos-audit-api-db:
+    container_name: "dhos-audit-api-db"
+    image: docker.io/postgres
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      POSTGRES_USER: dhos-audit-api
+      POSTGRES_PASSWORD: dhos-audit-api
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER}" ]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 5s

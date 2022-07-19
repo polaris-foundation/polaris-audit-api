@@ -1,0 +1,20 @@
+[paths]
+source =
+  dhos_audit_api/*
+
+[report]
+exclude_lines =
+  app.config
+
+omit =
+  **/__init__.py
+  **/__main__.py
+  dhos_audit_api/config.py
+  dhos_audit_api/autoapp.py
+  dhos_audit_api/blueprint_development/*
+
+
+fail_under = 90
+
+show_missing = true
+skip_covered = true
