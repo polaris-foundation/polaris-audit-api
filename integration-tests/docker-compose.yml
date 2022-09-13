@@ -48,8 +48,6 @@ services:
     container_name: "dhos-audit-api"
     build:
       context: ..
-      args:
-        - GEMFURY_DOWNLOAD_KEY
     environment:
       <<: *COMMON_ENVIRONMENT
       DHOS_AUDIT_BASE_URL: http://dhos-audit-api:5000
