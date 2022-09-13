@@ -41,7 +41,7 @@ jobs:
           command: .circleci/run_integration_tests.sh
   deploy-dev:
     docker:
-      - cimg/python:3.9
+      - image: cimg/python:3.9
     steps:
       - checkout
       - setup_remote_docker:
