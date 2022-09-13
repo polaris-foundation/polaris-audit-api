@@ -17,4 +17,4 @@ Feature: Data migration performance
 
     Examples:
       | db_revision_from | db_revision_to | event_data_keys                                                                        | event_data_new_keys                                                        | seconds_max | number_rows |
-      | 575920a9e769     | 6538146a372f   | device_uuid,clinician_uuid,patient_uuid,encounter_uuid,epr_encounter_uuid,obs_set_uuid | device_id,clinician_id,patient_id,encounter_id,epr_encounter_id,obs_set_id | 20          | 300000      |
+      | 575920a9e769     | 6538146a372f   | device_uuid,clinician_uuid,patient_uuid,encounter_uuid,epr_encounter_uuid,obs_set_uuid | device_id,clinician_id,patient_id,encounter_id,epr_encounter_id,obs_set_id | 20          | 200000      |
